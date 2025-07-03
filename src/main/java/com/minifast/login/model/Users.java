@@ -1,75 +1,77 @@
 package com.minifast.login.model;
 
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "users")
-public class Users {
+@Table(name = "custumers")
+public class Users implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 100)
+    private String id;
 
-    @NotBlank(message = "Nome não pode ser vazio")
-    @Column(name = "first_name")
-    private String name;
+    @Column(unique = true, nullable = false, length = 17)
+    private String login;
 
-    @NotBlank(message = "Sobrenome não pode ser vazio")
-    @Column(name = "lastname")
-    private String lastname;
-
-    @NotBlank(message = "Senha não pode ser vazia")
-    @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
-    @Column(name = "user_password")
+    @Column(name = "user_password", nullable = false, length = 60)
     private String password;
 
-    @NotBlank(message = "Celular não pode ser vazio")
-    @Pattern(regexp = "\\(\\d{2}\\) \\d{5}-\\d{4}", message = "Formato de telefone inválido")
-    @Column(name = "cellphone")
-    private String cellphone;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_role", nullable = false, length = 17)
+    private UserRole role;
 
-    // Getters e Setters normais (sem anotações aqui)
+    public Users() {
+        this.id = UUID.randomUUID().toString();
+    }
 
-    public Long getId() {
+    public Users(String login, String password, UserRole role) {
+        this.id = UUID.randomUUID().toString();
+        this.login = login;
+        this.password = password;
+        this.role = role;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getLastname() {
-        return lastname;
-    }
-
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
+    public String getLogin() {
+        return login;
     }
 
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public UserRole getRole() {
+        return role;
     }
 
-    public String getCellphone() {
-        return cellphone;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (this.role == UserRole.ADMIN) {
+            return List.of(
+                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_USER")
+            );
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
-    public void setCellphone(String cellphone) {
-        this.cellphone = cellphone;
+    @Override
+    public String getUsername() {
+        return login;
     }
+
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 }
-
