@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - MiniFast</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff6f61 0%, #ffcc70 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 24px;
+            text-shadow: 1px 2px 8px #ff6f61aa;
+        }
+        form {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px #ff6f6133;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 300px;
+        }
+        input {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #ffe5d0;
+            font-size: 1rem;
+            outline: none;
+            transition: background 0.2s;
+        }
+        input:focus {
+            background: #fff3e0;
+        }
+        button {
+            background: linear-gradient(90deg, #ff6f61, #ffcc70);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #ffcc70, #ff6f61);
+            transform: scale(1.04);
+        }
+        p {
+            margin-top: 18px;
+            color: #fff;
+            text-shadow: 1px 1px 6px #ff6f6133;
+        }
+        a {
+            color: #fff;
+            font-weight: bold;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: #ffcc70;
+        }
+    </style>
+</head>
+<body>
+<h1>Login</h1>
+<form id="loginForm">
+    <input type="text" id="login" placeholder="Login" required>
+    <input type="password" id="password" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+</form>
+
+<p>Não tem conta? <a href="register.html">Cadastre-se</a></p>
+
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const login = document.getElementById("login").value;
+        const user_password = document.getElementById("password").value;
+
+        const res = await fetch("http://localhost:8080/auth/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ login, user_password })
+        });
+
+        if (res.ok) {
+            const { token } = await res.json();
+            localStorage.setItem("token", token);
+            window.location.href = "food.html";
+        } else {
+            alert("Login inválido.");
+        }
+    });
+</script>
+</body>
+</html>

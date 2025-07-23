@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 24px;
+            text-shadow: 1px 2px 8px #43e97baa;
+        }
+        form {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px #43e97b33;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 300px;
+        }
+        input, select {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #e0fff3;
+            font-size: 1rem;
+            outline: none;
+            transition: background 0.2s;
+        }
+        input:focus, select:focus {
+            background: #f0fff8;
+        }
+        button {
+            background: linear-gradient(90deg, #43e97b, #38f9d7);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #38f9d7, #43e97b);
+            transform: scale(1.04);
+        }
+        p {
+            margin-top: 18px;
+            color: #000;
+            text-shadow: 1px 1px 6px #43e97b33;
+        }
+        a {
+            color: #fff;
+            font-weight: bold;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: #38f9d7;
+        }
+        code {
+            background: #e0fff3;
+            color: #43e97b;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+        strong {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<h1>Cadastro</h1>
+<form id="registerForm">
+    <input type="text" id="login" placeholder="Login" required>
+    <input type="password" id="password" placeholder="Senha" required>
+    <select id="role" required>
+        <option value="">Selecione a função</option>
+        <option value="ADMIN">Admin</option>
+        <option value="USER">Usuário</option>
+    </select>
+    <button type="submit">Cadastrar</button>
+</form>
+
+<p>Já tem conta? <a href="index.html">Fazer login</a></p>
+
+<p><strong>Aviso:</strong> Escolha <code>ADMIN</code> para cadastrar alimentos. Usuários com <code>USER</code> apenas visualizarão a lista.</p>
+
+<script>
+    document.getElementById("registerForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const login = document.getElementById("login").value;
+        const user_password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        const res = await fetch("http://localhost:8080/auth/register", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ login, user_password, role })
+        });
+
+        if (res.ok) {
+            alert("Cadastro realizado com sucesso!");
+            window.location.href = "index.html";
+        } else {
+            alert("Erro ao cadastrar. Tente outro login.");
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Alimentos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --grad-a: #36d1c4;
+            --grad-b: #5b86e5;
+            --bg-even: #f0f7ff;
+            --bg-odd: #e6f7fa;
+            --white: #fff;
+            --txt-dark: #333;
+        }
+        body {
+            background: linear-gradient(135deg, var(--grad-a) 0%, var(--grad-b) 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 72px 16px 32px;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: var(--white);
+            margin-bottom: 24px;
+            text-shadow: 1px 2px 8px #5b86e5aa;
+            text-align: center;
+        }
+        table {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px #5b86e533;
+            border-collapse: collapse;
+            margin-bottom: 32px;
+            min-width: 320px;
+            max-width: 90%;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+        th {
+            background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+            color: var(--white);
+            font-size: 1.05rem;
+        }
+        tr:nth-child(even) td { background: var(--bg-even); }
+        tr:nth-child(odd)  td { background: var(--bg-odd); }
+        td { color: var(--txt-dark); }
+        button {
+            background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, var(--grad-b), var(--grad-a));
+            transform: scale(1.05);
+        }
+        #adminForm {
+            background: var(--white);
+            padding: 24px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px #36d1c433;
+            display: none; /* controlado pelo script */
+            flex-direction: column;
+            gap: 12px;
+            min-width: 320px;
+            margin-bottom: 24px;
+            box-sizing: border-box;
+        }
+        #adminForm h2 {
+            color: var(--grad-a);
+            margin-bottom: 12px;
+        }
+        #adminForm input {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: var(--bg-odd);
+            font-size: 1rem;
+            outline: none;
+            transition: background 0.2s;
+        }
+        #adminForm input:focus { background: var(--bg-even); }
+
+        /* Logout */
+        .logout-btn {
+            position: fixed;
+            top: 16px;
+            right: 24px;
+            z-index: 100;
+            padding: 6px 14px;
+            font-size: 0.95rem;
+        }
+
+        /* Aviso USER */
+        #roleWarning {
+            color: #fff;
+            background: #00000033;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            th, td { font-size: 0.9rem; padding: 10px 12px; }
+            button { font-size: 0.9rem; padding: 6px 12px; }
+            .logout-btn { font-size: 0.85rem; right: 16px; }
+            #adminForm { width: 100%; min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+<button class="logout-btn" onclick="logout()">Sair</button>
+
+<h1>Lista de Alimentos</h1>
+
+<div id="roleWarning" style="display:none;"></div>
+
+<table id="foodTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Preço</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div id="adminForm">
+    <h2>Adicionar alimento</h2>
+    <input type="text" id="nome" placeholder="Nome">
+    <input type="text" id="descricao" placeholder="Descrição">
+    <input type="text" id="preco" placeholder="Preço">
+    <button type="button" onclick="addFood()">Salvar</button>
+</div>
+
+<script>
+    /* ------------------ Autenticação básica ------------------ */
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "index.html";
+    }
+
+    const adminForm = document.getElementById("adminForm");
+    const tbody = document.querySelector("#foodTable tbody");
+    const roleWarning = document.getElementById("roleWarning");
+
+    function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "index.html";
+    }
+
+    async function getUserRole() {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            // Alguns payloads JWT usam 'roles', outros 'authorities'; cobrimos ambos
+            const auths = payload.authorities || payload.roles || [];
+            if (Array.isArray(auths)) {
+                return auths.includes("ROLE_ADMIN") ? "ADMIN" : "USER";
+            }
+            // Se vier string única
+            return String(auths).includes("ROLE_ADMIN") ? "ADMIN" : "USER";
+        } catch (e) {
+            alert("Erro ao verificar permissões. Faça login novamente.");
+            logout();
+        }
+    }
+
+    /* ------------------ Carregar alimentos ------------------ */
+    async function loadFoods() {
+        let role = await getUserRole();
+
+        // Mostrar ou ocultar formulário admin
+        if (role === "ADMIN") {
+            adminForm.style.display = "flex";
+            roleWarning.style.display = "none";
+        } else {
+            adminForm.style.display = "none";
+            roleWarning.textContent =
+                "⚠️ Você está logado como usuário comum. Pode apenas visualizar os alimentos.";
+            roleWarning.style.display = "block";
+        }
+
+        try {
+            const res = await fetch("http://localhost:8080/api/foods", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                alert("Sessão expirada ou acesso negado. Faça login novamente.");
+                logout();
+                return;
+            }
+
+            if (!res.ok) throw new Error("Erro ao buscar alimentos.");
+
+            const data = await res.json();
+            renderFoodTable(data, role);
+        } catch (error) {
+            alert(error.message || "Erro ao carregar alimentos.");
+        }
+    }
+
+    function renderFoodTable(data, role) {
+        tbody.innerHTML = "";
+        if (!Array.isArray(data) || data.length === 0) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td colspan="4">Nenhum alimento cadastrado.</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+
+        data.forEach(food => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${food.id ?? ""}</td>
+                <td>${food.nome ?? ""}</td>
+                <td>${food.preco ?? ""}</td>
+                <td>
+                    ${role === "ADMIN"
+                ? `<button type="button" onclick="deleteFood(${food.id})">Excluir</button>`
+                : ""}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    /* ------------------ Adicionar alimento (ADMIN) ------------------ */
+    async function addFood() {
+        const nome = document.getElementById("nome").value.trim();
+        const descricao = document.getElementById("descricao").value.trim();
+        const preco = document.getElementById("preco").value.trim();
+
+        if (!nome || !descricao || !preco) {
+            alert("Preencha todos os campos!");
+            return;
+        }
+
+        try {
+            const res = await fetch("http://localhost:8080/api/foods", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ nome, descricao, preco })
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                alert("Você não tem permissão para cadastrar alimentos.");
+                return;
+            }
+
+            if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(msg || "Erro ao salvar alimento. Verifique os dados.");
+            }
+
+            alert("Alimento salvo com sucesso!");
+
+            // Limpar campos
+            document.getElementById("nome").value = "";
+            document.getElementById("descricao").value = "";
+            document.getElementById("preco").value = "";
+
+            loadFoods();
+        } catch (error) {
+            alert(error.message || "Erro ao salvar alimento.");
+        }
+    }
+
+    /* ------------------ Excluir alimento (ADMIN) ------------------ */
+    async function deleteFood(id) {
+        if (!confirm("Tem certeza que deseja excluir este alimento?")) return;
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/foods/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                alert("Você não tem permissão para excluir alimentos.");
+                return;
+            }
+
+            if (!res.ok) throw new Error("Erro ao excluir alimento.");
+
+            alert("Alimento excluído com sucesso!");
+            loadFoods();
+        } catch (error) {
+            alert(error.message || "Erro ao excluir alimento.");
+        }
+    }
+
+    /* ------------------ Inicialização ------------------ */
+    loadFoods();
+</script>
+</body>
+</html>
