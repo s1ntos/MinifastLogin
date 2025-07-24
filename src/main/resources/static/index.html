@@ -88,7 +88,7 @@
         const login = document.getElementById("login").value;
         const user_password = document.getElementById("password").value;
 
-        const res = await fetch("http://localhost:8080/auth/login", {
+        const res = await fetch("http://54.85.22.144:8080/auth/login", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ login, user_password })

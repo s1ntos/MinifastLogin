@@ -201,7 +201,7 @@
         }
 
         try {
-            const res = await fetch("http://localhost:8080/api/foods", {
+            const res = await fetch("http://54.85.22.144:8080/api/foods", {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -257,7 +257,7 @@
         }
 
         try {
-            const res = await fetch("http://localhost:8080/api/foods", {
+            const res = await fetch("http://54.85.22.144:8080/api/foods", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -294,7 +294,7 @@
         if (!confirm("Tem certeza que deseja excluir este alimento?")) return;
 
         try {
-            const res = await fetch(`http://localhost:8080/api/foods/${id}`, {
+            const res = await fetch(`http://54.85.22.144:8080/api/foods/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
